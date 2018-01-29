@@ -12,7 +12,7 @@ import io.appium.java_client.android.AndroidDriver;
 public class TestRunner {
 	AndroidDriver<WebElement> androiddriver;
 	@Test
-	public void TestApp() throws IOException{
+	public void TestApp() throws RuntimeException, Exception{
 		androiddriver=ReadExcel.ReadAll(Constant.File_name);
 		
 	}

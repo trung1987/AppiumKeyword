@@ -32,34 +32,37 @@ public class ReadExcel {
 	static LocalDateTime now = LocalDateTime.now();
 	static boolean isAndroid=false;
 	
-	public static AndroidDriver<WebElement> ReadAll(String fileNameConfig) throws IOException{
+	public static AndroidDriver<WebElement> ReadAll(String fileNameConfig) throws NumberFormatException, Exception{
 		String filePathConfig = System.getProperty("user.dir") + "//Test_Input";
 		String sheetNameConfig = "TestConfig";
 		
-		for(int i=Constant.RUN_Android_COL_NUM;i<=Constant.Run_IOS;i++){
+		for(int i=Constant.RUN_Android_COL_NUM;i<=Constant.RUN_IOs_COL_NUM;i++){
 			ArrayList<String> runColumn = ReadExcel.readExcelFileAtColumn(filePathConfig, fileNameConfig,
 					sheetNameConfig, i);
 			System.out.println(Constant.narrow+ "\n"+runColumn.toString());
-			
-			String sheet = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, i,
-					Constant.SHEET_COL_NUM);
-			if (sheet.equalsIgnoreCase("")) {
-				int temp = i;
-				while (sheet.equalsIgnoreCase("")) {
-					temp--;
-					sheet = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, temp,
-							Constant.SHEET_COL_NUM);
-					
+			for (int j = 1; j < runColumn.size(); j++) {
+				String sheet = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, j,
+						Constant.SHEET_COL_NUM);
+				if (sheet.equalsIgnoreCase("")) {
+					int temp = j;
+					while (sheet.equalsIgnoreCase("")) {
+						temp--;
+						sheet = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, temp,
+								Constant.SHEET_COL_NUM);
+						
+					}
+				}
+				String fromRow = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, j,
+						Constant.FROM_ROW_COL_NUM);
+				String toRow = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, j,
+						Constant.TO_ROW_COL_NUM);
+				//System.out.println("runcolumn"+ runColumn.toString()+";"+runColumn.size() + "j: " +j);
+				if(runColumn.get(j).toLowerCase().equalsIgnoreCase(Constant.yes)){
+					driver = readExcelFile(null, j, filePathConfig, fileNameConfig, sheet,
+							Integer.parseInt(fromRow), Integer.parseInt(toRow), true,
+							Constant.TOTAL_COLUMN_NUMBER);
 				}
 			}
-			
-			
-			String fromRow = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, i,
-					Constant.FROM_ROW_COL_NUM);
-			String toRow = ReadExcel.readExcelFileAtCell(filePathConfig, fileNameConfig, sheetNameConfig, i,
-					Constant.TO_ROW_COL_NUM);
-			
-			
 		}
 		return driver;
 	}
@@ -136,4 +139,57 @@ public class ReadExcel {
 		}
 		return CellData;
 	}
+	
+	
+	/*
+	 * read excel test case with sheetName
+	 */
+	public static AndroidDriver<WebElement> readExcelFile(WebDriver localDriver, int browserColumn, String filePath, String fileName,
+			String readSheetName, int fromRow, int toRow, boolean haveRelated, int maxColumn) throws Exception {
+		// Clear previous result on test case file
+
+		System.out.println(Constant.narrow);
+		for (int i = fromRow; i < toRow ; i++) {
+			try {
+				ArrayList<String> eachRow = ReadExcel.readExcelFileAtRow(filePath, fileName, readSheetName, i, 0,
+						maxColumn);
+				/*	keyword_executor(localDriver, browserColumn, eachRow, filePath, fileName, readSheetName, i,
+							maxColumn, haveRelated);*/
+				System.out.println(i+" "+eachRow);
+			} catch (Exception e) {
+				System.out.println(e.getMessage());
+			/*	ExcelUtils.writeExcelFileWithResultTest(browserColumn, filePath, fileName, readSheetName, i, "FAILED",
+						dtf.format(now), e.getMessage(), maxColumn);*/
+				System.out.println("error gi do");
+			}
+		}
+		return driver;
+	}
+	
+	
+	// read data at specific row from 'startColumn' to 'endColumn'
+		@SuppressWarnings({ "deprecation", "static-access" })
+		public static ArrayList<String> readExcelFileAtRow(String filePath, String fileName, String sheetName, int row,
+				int startColumn, int endColumn) throws IOException {
+			ArrayList<String> rowData = new ArrayList<String>();
+			try {
+				Workbook wb = newWorkbook(filePath, fileName);
+				Sheet sheet = wb.getSheet(sheetName);
+				Row rowExcel = null;
+				rowExcel = sheet.getRow(row);
+				for (int i = startColumn; i <= endColumn; i++) {
+					try {
+						Cell cell = rowExcel.getCell(i);
+						cell.setCellType(cell.CELL_TYPE_STRING);
+						rowData.add(cell.getStringCellValue());
+					} catch (Exception e) {
+						// if row(i) = null / empty
+						rowData.add("");
+					}
+				}
+			} catch (Exception e) {
+				System.out.println("Cannot read data at row:" + row);
+			}
+			return rowData;
+		}
 }
